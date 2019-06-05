@@ -16,7 +16,7 @@ def missing_data_ratio(data, columns=None):
 
     data_len = len(data)
 
-    return {c:np.sum(data[c].isna())/data_len for c in column_list}
+    return {c:np.sum(data[c] == "")/data_len for c in column_list}
 
 def distinct_values_ratio(data, columns=None):
     """Computes the Distinct Values Ratio for a given dataset.
@@ -97,9 +97,7 @@ def shannon_entropy(data, columns=None):
 
     # Probability for a single value in a discrete distribution is (num_of_occurrences/len_of_distribution)
     probabilities = np.array([np.array(list(count.values()))/len(count) for count in count_vals])
-    print(probabilities)
     entropies = {col:entropy(p,base=2) for col,p in zip(column_list,probabilities)}
-    print(entropies)
     return entropies
 
 def joint_entropy(data, columns=None):
@@ -126,11 +124,13 @@ def theoretical_maximum_entropy(data, columns=None):
     Returns:
         Dictionary of {column_name : TME(column)}
     """
-    unq_vals = [len(set(data[c])) for c in columns]
+    columns_to_use = data.columns if columns is None else columns
+
+    unq_vals = [len(set(data[c])) for c in columns_to_use]
 
     tmes = [-np.log2(1/uq) if uq is not 0 else 0 for uq in unq_vals]
 
-    return {c:tme for c,tme in zip(columns,tmes)}
+    return {c:tme for c,tme in zip(columns_to_use,tmes)}
 
 def percent_theoretical_maximum_entropy(data, columns=None):
     """Calculates the Percentage of Theoretical Maximum Entropy for a given dataset.
@@ -147,7 +147,7 @@ def percent_theoretical_maximum_entropy(data, columns=None):
     """
     tme = theoretical_maximum_entropy(data=data,columns=columns)
     entropy = shannon_entropy(data=data,columns=columns)
-
+    # Calculate the P_TME for each column in the column list.
     p_tme = {}
     for k in tme.keys():
         pct = entropy[k]/tme[k] * 100
@@ -168,9 +168,11 @@ def average_token_frequency(data, columns=None):
     Returns:
         atfs -- Dictionary of {column_name : ATFS(column)}
     """
+    columns_to_use = data.columns if columns is None else columns
+    # Calculate the ATF for each column in the column list.
     atfs = {}
     data_len = len(data)
-    for c in columns:
+    for c in columns_to_use:
         atfs[c] = data_len/len(set(data[c]))
 
     return atfs
