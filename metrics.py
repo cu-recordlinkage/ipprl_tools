@@ -54,6 +54,11 @@ def group_size(data, columns=None):
     # Get the group sizes
     group_sizes = {col:Counter(data[col]) for col in column_list}
 
+    for val in group_sizes.values():
+        # Remove NaN (missing counts)
+        if val.get("") is not None:
+            del val[""]
+            
     # Return the group sizes.
     return group_sizes
 
@@ -74,9 +79,11 @@ def agg_group_size(data, agg_func = np.mean, columns=None):
     """
     group_sizes = group_size(data,columns=columns)
     
+    columns_to_use = data.columns if columns is None else columns
+
     agg_group_sizes = [agg_func([*group_sizes[col].values()]) for col in group_sizes]
 
-    return {col:agg_val for col,agg_val in zip(list(data.keys()),agg_group_sizes)}
+    return {col:agg_val for col,agg_val in zip(columns_to_use,agg_group_sizes)}
 
 def shannon_entropy(data, columns=None):
     """Function to compute the Shannon Entropy for a set of columns.
@@ -172,8 +179,14 @@ def average_token_frequency(data, columns=None):
     # Calculate the ATF for each column in the column list.
     atfs = {}
     data_len = len(data)
+
+
     for c in columns_to_use:
-        atfs[c] = data_len/len(set(data[c]))
+        # TODO: Should we count missing values in the numerator or denominator of these metrics?
+        data_set = set(data[c])
+        if "" in data_set:
+            data_set.remove("")
+        atfs[c] = data_len/len(data_set)
 
     return atfs
 
