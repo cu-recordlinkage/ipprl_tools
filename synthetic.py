@@ -1,5 +1,8 @@
 import numpy as np
 from fuzzy import Soundex
+from scipy.sparse import dok_matrix
+
+
 def drop_per_column(data, indicators, columns = None, drop_num = None, drop_pct = None):
     """Function to randomly drop data values in columns 
     
@@ -18,33 +21,26 @@ def drop_per_column(data, indicators, columns = None, drop_num = None, drop_pct 
 
     cols_to_drop = data.columns if columns is None else columns
 
+    col_map = {k:v for k,v in zip(cols_to_drop,[data.columns.get_loc(x) for x in cols_to_drop])}
+    data_len = len(data)
     if drop_num is None and drop_pct is None:
         raise Exception("Both drop_num and drop_pct are None. Please specify one or the other.")
-    
-    if drop_num is not None:
-        if type(drop_num) == list:
-            for dnum,col in zip(drop_num,cols_to_drop):
-                # Choose some indices of values to drop.
-                drop_vals = np.random.choice(len(data),dnum,replace=False)
-                data[col].iloc[drop_vals] = ""
-        elif type(drop_num) == int:
-            for col in cols_to_drop:
-                drop_vals = np.random.choice(len(data),drop_num,replace=False)
-                data[col].iloc[drop_vals] = ""
+
+    if drop_num is None:
+        if type(drop_pct) == float:
+            drop_num = np.repeat(int(drop_pct * data_len),len(cols_to_drop))
         else:
-            raise ValueError(drop_num)
-    else:
-        if type(drop_pct) == list:
-            for dpct,col in zip(drop_pct,cols_to_drop):
-                # Choose some indices of values to drop.
-                dnum = int(dpct*len(data))
-                drop_vals = np.random.choice(len(data),dnum,replace=False)
-                data[col].iloc[drop_vals] = ""
-        elif type(drop_pct) == float:
-            dnum = int(drop_pct*len(data))
-            for col in cols_to_drop:
-                drop_vals = np.random.choice(len(data),dnum,replace=False)
-                data[col].iloc[drop_vals] = ""
+            drop_num = [int(d*data_len) for d in drop_pct]
+
+    for dnum, col in zip(drop_num, cols_to_drop):
+        # Choose some indices of values to drop.
+        drop_vals = np.random.choice(data_len, dnum, replace=False)
+        data[col].iloc[drop_vals] = ""
+
+        result = np.repeat({"drop":True},data_len)
+
+        _update_indicators(indicators, col_map[col], drop_vals, "drop_per_column",result)
+
 
 def string_delete(data, indicators, delete_num, delete_freq, columns = None):
     """Randomly delete characters from strings to simulate typographic errors.
@@ -73,26 +69,24 @@ def string_apply(data, indicators, apply_num, apply_freq, func, name, columns=No
         columns {list} -- List of columns to perform string manipulation on. If None (default), run on all columns.  (default: {None})
     """
     columns_to_use = data.columns if columns is None else columns
+    col_map = {k:v for k,v in zip(columns_to_use,[data.columns.get_loc(x) for x in columns_to_use])}
+    data_len = len(data)
 
     if type(apply_num) == list and type(apply_freq) != list or type(apply_freq) == list and type(apply_num) != list:
         raise Exception("Error: Both apply_num and apply_freq must be the same type (list or scalar).")
-    
-    if type(apply_num) == list:
-        for c,anum,afreq in zip(columns_to_use,apply_num,apply_freq):
-            apply_result = np.stack(data[c].apply(func,args=(anum,afreq)))
-            #mod_data = apply_result[:,0]
-            #indicators = apply_result[:,1]
-            data[c] = apply_result[:,0]
-            _update_indicators(indicators,c,name,apply_result[:,1])
-            #indicators[c] = apply_result[:,1]
-    elif type(apply_num) == int:
-        for c in columns_to_use:
-            #data[c] = data[c].apply(func,args=(apply_num,apply_freq))
-            apply_result = np.stack(data[c].apply(func,args=(apply_num,apply_freq)))
-            data[c] = apply_result[:,0]
-            #indicators[c] = apply_result[:,1]
-            _update_indicators(indicators,c,name,apply_result[:,1])
 
+    if type(apply_num) != list:
+        apply_num = np.repeat(apply_num,len(columns_to_use))
+        apply_freq = np.repeat(apply_freq,len(columns_to_use))
+
+    for c,anum,afreq in zip(columns_to_use,apply_num,apply_freq):
+        apply_result = np.stack(data[c].apply(func,args=(anum,afreq)))
+        #mod_data = apply_result[:,0]
+        #indicators = apply_result[:,1]
+        data[c] = apply_result[:,0]
+        idcs = np.squeeze(np.argwhere(apply_result[:,1] != None))
+        # result_dict = [{"apply_freq"}]
+        _update_indicators(indicators,col_map[c],idcs,name,apply_result[idcs,1])
 
 def string_transpose(data, indicators, trans_num, trans_freq, columns = None):
     """Randomly transpose characters from strings to simulate typographic errors.
@@ -144,32 +138,27 @@ def soundex_string_corrupt(data, indicators, corrupt_name_pct, columns= None):
         corrupt_char_pct {float or list} -- Percentage of replacements to perform per column (default: {None})
     """
     soundex_obj = Soundex(4)
+
     columns_to_use = data.columns if columns is None else columns
-    
+    col_map = {k:v for k,v in zip(columns_to_use,[data.columns.get_loc(x) for x in columns_to_use])}
+
     data_len = len(data)
-    
-    
-    if type(corrupt_name_pct) == list:
-        for column,pct in zip(columns_to_use,corrupt_name_pct):
-            # Generate a Soundex lookup table for this column
-            lookup_table = _build_lookup_table(data[column],soundex_obj)
-            # Now randomly select the indices to replace 
-            indcs = np.random.choice(data_len,int(pct*data_len),replace=False)
-            
-            # For each index, choose a replacement soundex value randomly from the set
-            # of all values that have this soundex value.
-            _soundex_replace(data[column].iloc[indcs],lookup_table,soundex_obj)
-    else:
-        for column in columns_to_use:
-            # Generate a Soundex lookup table for this column
-            lookup_table = _build_lookup_table(data[column],soundex_obj)
-            # Now randomly select the indices to replace 
-            indcs = np.random.choice(data_len,int(corrupt_name_pct*data_len),replace=False)
-            
-            # For each index choose a repalcement soundex value randomly from the set
-            # of all values that have this soundex value.
-            vals = _soundex_replace(data[column].iloc[indcs],lookup_table,soundex_obj)
-            data[column].iloc[indcs] = vals
+
+    if type(corrupt_name_pct) is not list:
+        corrupt_name_pct = np.repeat(corrupt_name_pct,len(columns_to_use))
+
+    for column,pct in zip(columns_to_use,corrupt_name_pct):
+        # Generate a Soundex lookup table for this column
+        lookup_table = _build_lookup_table(data[column],soundex_obj)
+        # Now randomly select the indices to replace
+        indcs = np.random.choice(data_len,int(pct*data_len),replace=False)
+
+        result = np.repeat({"replaced": True},data_len)
+
+        # For each index, choose a replacement soundex value randomly from the set
+        # of all values that have this soundex value.
+        _soundex_replace(data[column].iloc[indcs],lookup_table,soundex_obj)
+        _update_indicators(indicators,col_map[column],indcs,"soundex_corrupt",result)
 
 def keyboard_string_corrupt(data, indicators, columns = None, corrupt_char_num = None, corrupt_char_pct = None):
     pass
@@ -180,21 +169,15 @@ def edit_values(data, swap_set, indicators, pct_edits, columns=None):
 
     data_len = len(data)
 
-    if type(pct_edits) is list:
-        for col,ed_pct in zip(columns_to_use,pct_edits):
-            # Randomly choose indices to edit
-            idcs = np.random.choice(data_len,int(ed_pct*data_len),replace=False)
-            swap_idcs = np.random.choice(swap_set[col],int(ed_pct*data_len))
+    if type(pct_edits) is not list:
+        pct_edits = np.repeat(pct_edits,data_len)
 
-            data[col].iloc[idcs] = swap_set[col].iloc[swap_idcs]
-    else:
-        for col in columns_to_use:
-            swap_set_len = len(swap_set[col])
-            # Randomly choose indices to edit
-            idcs = np.random.choice(data_len,int(pct_edits*data_len),replace=False)
-            swap_idcs = np.random.choice(swap_set_len,int(pct_edits*data_len),replace=False)
+    for col,ed_pct in zip(columns_to_use,pct_edits):
+        # Randomly choose indices to edit
+        idcs = np.random.choice(data_len,int(ed_pct*data_len),replace=False)
+        swap_idcs = np.random.choice(swap_set[col],int(ed_pct*data_len))
 
-            data[col].iloc[idcs] = swap_set[col].iloc[swap_idcs].values
+        data[col].iloc[idcs] = swap_set[col].iloc[swap_idcs]
 
 
 
@@ -227,29 +210,27 @@ def _soundex_replace(column,lookup_table,sdx):
 
 def _delete_func(value, del_num, del_freq):
     # Only run on some columns. The frequency of deletes is specified by delete_freq.
-    if np.random.random() > del_freq:
-        return [value,"0"]
+    if np.random.random() > del_freq or len(value) < 2:
+        return [value,None]
     # Don't completely erase the string. At worst, leave one character behind.
-    max_chars_to_delete = min(len(value)-1, del_num)
-
-    # If there are not enough characters to delete one without destroying the entire string,
-    # then return the value unchanged.
-    if max_chars_to_delete is 0:
-        return [value,"0"]
+    chars_to_delete = min(np.random.choice(del_num)+1,len(value)-1)
 
     # Choose some indices to delete from the string. Choose between 0 and max_chars_to_delete_indices
-    num_to_delete = np.random.choice(max_chars_to_delete)
+    num_to_delete = np.random.choice(chars_to_delete)
     idcs_to_delete = np.random.choice(len(value),num_to_delete,replace=False)
+
+    result_dict = {"num_deleted":num_to_delete,
+                   "idcs_deleted":idcs_to_delete}
 
     # Build a new string without the deleted characters
     new_str = "".join([c for i,c in enumerate(value) if ~np.isin(i,idcs_to_delete)])
 
-    return [new_str,str(max_chars_to_delete)]
+    return [new_str,result_dict]
 
 def _transpose_func(value, trns_num, trns_freq):
     # Only run on some columns
     if np.random.random() > trns_freq:
-        return [value,0]
+        return [value,None]
     
     # Get the maximum number of transposes to perform.
     max_num_of_trnsp = min(len(value)//2, trns_num)
@@ -257,18 +238,20 @@ def _transpose_func(value, trns_num, trns_freq):
     # If the string is not long enough to perform a string transpose,
     # then return the string unchanged.
     if max_num_of_trnsp == 0:
-        return [value,"0"]
+        return [value,None]
     # Choose the actual number of transposes to perform
     num_to_trns = np.random.choice(max_num_of_trnsp)
     idcs_to_trnsp = np.random.choice(len(value)//2,num_to_trns)*2
+
+    result_dict = {"num_transposed":num_to_trns,
+                   "idcs_transposed":idcs_to_trnsp}
 
     string_pos = np.arange(len(value))
        
     for swap_idx in idcs_to_trnsp:
         string_pos[swap_idx:swap_idx+2] = np.flip(string_pos[swap_idx:swap_idx+2])
-    
-    
-    return ["".join([value[s] for s in string_pos]),str(max_num_of_trnsp)]
+
+    return ["".join([value[s] for s in string_pos]),result_dict]
 
 
 def _swap(arr,l,r):
@@ -283,29 +266,44 @@ def _get_rand_num_char():
 def _insert_func_alpha(value, ins_num, ins_freq):
     # Only run on some columns
     if np.random.random() > ins_freq:
-        return [value,"0"]
+        return [value,None]
     
     # Choose the number of insertions to perform
-    num_to_ins = min(np.random.choice(ins_num),len(value))
+    num_to_ins = min(np.random.choice(ins_num)+1,len(value))
     idcs_to_ins = np.random.choice(len(value),num_to_ins,replace=False)
 
+    result_dict = {"num_inserted":num_to_ins,
+                   "idcs_inserted":idcs_to_ins}
+
     new_str = "".join([c if ~np.isin(i,idcs_to_ins) else c+_get_rand_char() for i,c in enumerate(value)])
-    return [new_str,str(num_to_ins)]
+
+    return [new_str,result_dict]
 
 def _insert_func_numeric(value, ins_num, ins_freq):
     # Only run on some columns
     if np.random.random() > ins_freq:
-        return [value,"0"]
+        return [value,None]
     
     # Choose the number of insertions to perform
-    num_to_ins = min(np.random.choice(ins_num),len(value))
+    num_to_ins = min(np.random.choice(ins_num)+1,len(value))
     idcs_to_ins = np.random.choice(len(value),num_to_ins,replace=False)
 
+    result_dict = {"num_inserted":num_to_ins,
+                   "idcs_inserted":idcs_to_ins}
+
     new_str = "".join([c if ~np.isin(i,idcs_to_ins) else c+_get_rand_num_char() for i,c in enumerate(value)])
-    return [new_str,str(num_to_ins)]
 
-def _update_indicators(indicator_df, column_name, method_name, metric_result):
-    if indicator_df.get(method_name) is None:
-        indicator_df[method_name] = {}
+    return [new_str,result_dict]
 
-    indicator_df[method_name][column_name] = metric_result
+def _update_indicators(indicator_df, column_index, indices, method_name, metric_result):
+
+    tuple_pack = np.stack(np.broadcast_arrays(column_index,indices)).T
+
+    # Iterate over the pairs and set their elements
+    for ind,pair in enumerate(tuple_pack):
+        tuple_pair = tuple(pair)
+        if indicator_df.get(tuple_pair) is None:
+            indicator_df[tuple_pair] = {}
+
+        indicator_df[tuple_pair][method_name] = metric_result[ind]
+
