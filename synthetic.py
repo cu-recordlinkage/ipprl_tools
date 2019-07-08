@@ -153,7 +153,7 @@ def soundex_string_corrupt(data, indicators, corrupt_name_pct, columns= None):
         # Now randomly select the indices to replace
         indcs = np.random.choice(data_len,int(pct*data_len),replace=False)
 
-        result = np.repeat({"replaced": True},data_len)
+        result = np.repeat({"replaced": True},indcs.shape[0])
 
         # For each index, choose a replacement soundex value randomly from the set
         # of all values that have this soundex value.
@@ -167,6 +167,8 @@ def edit_values(data, swap_set, indicators, pct_edits, columns=None):
     # Get the columns to use for the edit values operation.
     columns_to_use = data.columns if columns is None else columns
 
+    col_map = {k:v for k,v in zip(columns_to_use,[data.columns.get_loc(x) for x in columns_to_use])}
+
     data_len = len(data)
 
     if type(pct_edits) is not list:
@@ -175,9 +177,14 @@ def edit_values(data, swap_set, indicators, pct_edits, columns=None):
     for col,ed_pct in zip(columns_to_use,pct_edits):
         # Randomly choose indices to edit
         idcs = np.random.choice(data_len,int(ed_pct*data_len),replace=False)
-        swap_idcs = np.random.choice(swap_set[col],int(ed_pct*data_len))
 
-        data[col].iloc[idcs] = swap_set[col].iloc[swap_idcs]
+        swap_vals = np.random.choice(swap_set[col],int(ed_pct*data_len))
+
+        result = np.repeat({"value_edit" : True},idcs.shape[0])
+
+        _update_indicators(indicators,col_map[col],idcs,"edit_values",result)
+
+        data[col].iloc[idcs] = swap_vals
 
 
 
@@ -233,14 +240,14 @@ def _transpose_func(value, trns_num, trns_freq):
         return [value,None]
     
     # Get the maximum number of transposes to perform.
-    max_num_of_trnsp = min(len(value)//2, trns_num)
+    max_num_of_trnsp = min((len(value)//2)-1, trns_num)
 
     # If the string is not long enough to perform a string transpose,
     # then return the string unchanged.
-    if max_num_of_trnsp == 0:
+    if max_num_of_trnsp <= 0:
         return [value,None]
     # Choose the actual number of transposes to perform
-    num_to_trns = np.random.choice(max_num_of_trnsp)
+    num_to_trns = np.random.choice(max_num_of_trnsp)+1
     idcs_to_trnsp = np.random.choice(len(value)//2,num_to_trns)*2
 
     result_dict = {"num_transposed":num_to_trns,
