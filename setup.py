@@ -7,6 +7,7 @@ setup(name="ipprl_tools",
 	  author_email="andrew.2.hill@ucdenver.edu",
 	  install_requires=[
 		"numpy",
+		"scipy",
 		"pandas",
 		"fuzzy"],
 	  packages=["ipprl_tools"])
