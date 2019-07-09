@@ -31,7 +31,11 @@ def drop_per_column(data, indicators, columns = None, drop_num = None, drop_pct 
             drop_num = np.repeat(int(drop_pct * data_len),len(cols_to_drop))
         else:
             drop_num = [int(d*data_len) for d in drop_pct]
+    else:
+        if type(drop_num) == int:
+            drop_num = np.repeat(drop_num,len(cols_to_drop))
 
+        
     for dnum, col in zip(drop_num, cols_to_drop):
         # Choose some indices of values to drop.
         drop_vals = np.random.choice(data_len, dnum, replace=False)
