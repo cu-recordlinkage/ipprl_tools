@@ -1,6 +1,34 @@
 import numpy as np
 import pandas as pd
 
+def convert_data(data):
+    """Converts a DataFrame to be ready for usage with the linkage metrics."""
+    str_data = data.copy().astype(np.str)
+    str_data[str_data == "nan"] = ""
+    
+    return str_data
+
+def run_metrics(data):
+    """Runs all available metrics on a pandas DataFrame containing the data.
+    Arguments:
+        data {DataFrame} -- Pandas DataFrame containing the data in columnar format.
+        
+    Note: Data must be in a DataFrame of type np.str. Missing values should be represented by the empty string "".
+    """
+    mdr = pd.Series(missing_data_ratio(data))
+    dvr = pd.Series(distinct_values_ratio(data))
+    mean_gs = pd.Series(agg_group_size(data,agg_func=np.mean))
+    std_gs = pd.Series(agg_group_size(data,agg_func=np.std))
+    max_gs = pd.Series(agg_group_size(data,agg_func=np.max))
+    min_gs = pd.Series(agg_group_size(data,agg_func=np.min))
+    entropy = pd.Series(shannon_entropy(data))
+    ptme = pd.Series(percent_theoretical_maximum_entropy(data))
+    atf = pd.Series(average_token_frequency(data))
+    
+    metrics_df = pd.concat([mdr,dvr,mean_gs,std_gs,max_gs,min_gs,entropy,ptme,atf],axis=1)
+    metrics_df.columns = ["mdr","dvr","mean_gs","std_gs","max_gs","min_gs","entropy","ptme","atf"]
+    return metrics_df
+
 def missing_data_ratio(data, columns=None):
     """Computes the missing data ratio (MDR) for a given dataset.
     
