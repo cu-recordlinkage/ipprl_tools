@@ -8,6 +8,5 @@ setup(name="ipprl_tools",
 	  install_requires=[
 		"numpy",
 		"scipy",
-		"pandas",
-		"fuzzy"],
+		"pandas"],
 	  packages=["ipprl_tools"])
