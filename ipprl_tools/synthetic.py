@@ -1,5 +1,4 @@
 import numpy as np
-from fuzzy import Soundex
 from scipy.sparse import dok_matrix
 
 
@@ -141,6 +140,12 @@ def soundex_string_corrupt(data, indicators, corrupt_name_pct, columns= None):
         columns {list} -- List of columns to operate on. If None, operate on all columns (default: {None})
         corrupt_char_pct {float or list} -- Percentage of replacements to perform per column (default: {None})
     """
+    try:
+        from fuzzy import Soundex
+    except ImportError:
+        print("Error: Must install the module 'fuzzy' before running this function.")
+        return
+
     soundex_obj = Soundex(4)
 
     columns_to_use = data.columns if columns is None else columns

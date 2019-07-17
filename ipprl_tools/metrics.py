@@ -22,6 +22,7 @@ def run_metrics(data):
     max_gs = pd.Series(agg_group_size(data,agg_func=np.max))
     min_gs = pd.Series(agg_group_size(data,agg_func=np.min))
     entropy = pd.Series(shannon_entropy(data))
+    tme = pd.Series(theoretical_maximum_entropy(data))
     ptme = pd.Series(percent_theoretical_maximum_entropy(data))
     atf = pd.Series(average_token_frequency(data))
     
