@@ -45,6 +45,10 @@ The following packages are optional dependencies for the \pkgname{} package. The
     \begin{itemize}
         \item This package is required for the Soundex corruption method. For more information about the package, visit \url{https://pypi.org/project/Fuzzy/}.
     \end{itemize}
+    \item \textbf{Jupyter} $\geq$ v1.0.0
+    \begin{itemize}
+        \item This package is required to view and run the tutorial Jupyter notebook. For more information about Jupyter, visit \url{https://jupyter.org/}
+    \end{itemize}
 \end{itemize}
 
 \section{Installation}
@@ -221,5 +225,25 @@ This function is intended to replicate natural information change over time.
     \item \docindc
     \item \parmdesc{pct\_edits}{This parameter represents the percentage of values within a column with should be edited. This can either be a scalar \textit{float} or a list of \textit{float} to specify a different percentage for each element of \textit{columns}.}
     \item \doccols
+\end{itemize}
+
+\section{Utilities}
+In addition to the synthetic data corruption methods, \pkgname{} also provides some utility functions to make generating synthetic datasets easier.
+\subsection{Data Utilities}
+\subsubsection{\textit{split\_dataset(raw\_data, overlap\_pct)}}
+This function is a simple utility that takes a DataFrame as input, then returns two DataFrames containing two separate Datasets, where \textit{overlap\_pct} of the rows from the dataset occur in both DataFrames, and the rests of the rows are unique to their repsective DataFrame.
+\\
+This function also returns a \textit{ground\_truth} variable, which is a list of tuples containing the IDs of the matching rows in the \textit{left} and \textit{right} datasets.
+\\
+\textbf{Parameters:}
+\begin{itemize}
+    \item \parmdesc{raw\_data}{The DataFrame containing the raw data to build the dataset from.}
+    \item \parmdesc{overlap\_pct}{The percentage of rows in \textit{raw\_data} which should be used as ground-truth positive linkages. (i.e. 0.5 == 50\% of the rows will be considered as positive linkages in the ground-truth data.}
+\end{itemize}
+\textbf{Returns:}
+\begin{itemize}
+    \item \parmdesc{left}{One half of the generated synthetic dataset.}
+    \item \parmdesc{right}{The other half of the generated synthetic dataset.}
+    \item \parmdesc{ground\_truth}{A list of tuples containing the IDs of the row pairs that overlap between \textit{left} and \textit{right}}
 \end{itemize}
 \end{document}

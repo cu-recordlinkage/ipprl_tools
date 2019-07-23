@@ -5,6 +5,7 @@ SAMPLE_DATA_FILE = "sample_data.zip"
 from urllib.request import urlretrieve
 from os.path import isfile, isdir, exists, join, split
 from os import makedirs
+
 def download_data():
 	""" Download some pre-made data into the data directory """
 	
@@ -37,7 +38,7 @@ def __download_url(url,path):
 
 def __get_source_dir():
 	# Get the path to the module source file directory. 
-	return split(__file__)[0]
+	return split(split(__file__)[0])[0]
 
 def get_data():
 	# Check if data already exists.
