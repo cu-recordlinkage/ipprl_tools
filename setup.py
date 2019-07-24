@@ -10,6 +10,6 @@ setup(name="ipprl_tools",
 		"scipy",
 		"pandas"],
 	  packages=["ipprl_tools","ipprl_tools.utils"],
-          package_dir={"ipprl_tools":["docs/*"]},
+          package_data={"ipprl_tools":["docs/*"]},
           include_package_data=True
      )
