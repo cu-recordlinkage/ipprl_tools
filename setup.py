@@ -9,4 +9,6 @@ setup(name="ipprl_tools",
 		"numpy",
 		"scipy",
 		"pandas"],
-	  packages=["ipprl_tools"])
+	  packages=["ipprl_tools","ipprl_tools.utils"],
+          include_package_data=True
+     )
