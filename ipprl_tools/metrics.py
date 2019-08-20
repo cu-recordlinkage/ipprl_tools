@@ -108,9 +108,15 @@ def agg_group_size(data, agg_func = np.mean, columns=None):
     """
     group_sizes = group_size(data,columns=columns)
     
-    columns_to_use = data.columns if columns is None else columns
+    columns_to_use = data.columns if columns is None else columns  
 
-    agg_group_sizes = [agg_func([*group_sizes[col].values()]) for col in group_sizes]
+    agg_group_sizes = []
+    for col in group_sizes:
+        if group_sizes[col].values() is None:
+            agg_group_sizes.append(-1)
+        else:
+            agg_group_sizes.append(agg_func([*group_sizes[col].values()]))
+    #agg_group_sizes = [agg_func([*group_sizes[col].values()]) for col in group_sizes]
 
     return {col:agg_val for col,agg_val in zip(columns_to_use,agg_group_sizes)}
 
