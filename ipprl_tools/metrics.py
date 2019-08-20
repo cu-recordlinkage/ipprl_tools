@@ -15,20 +15,27 @@ def run_metrics(data):
         
     Note: Data must be in a DataFrame of type np.str. Missing values should be represented by the empty string "".
     """
+
+    # Group Size Metrics
+    mean_gs = pd.Series(agg_group_size(data, agg_func=np.mean))
+    std_gs = pd.Series(agg_group_size(data, agg_func=np.std))
+    min_gs = pd.Series(agg_group_size(data, agg_func=np.min))
+    max_gs = pd.Series(agg_group_size(data, agg_func=np.max))
+    median_gs = pd.Series(agg_group_size(data, agg_func=np.median))
+
+    # Others
     mdr = pd.Series(missing_data_ratio(data))
     dvr = pd.Series(distinct_values_ratio(data))
-    mean_gs = pd.Series(agg_group_size(data,agg_func=np.mean))
-    std_gs = pd.Series(agg_group_size(data,agg_func=np.std))
-    max_gs = pd.Series(agg_group_size(data,agg_func=np.max))
-    min_gs = pd.Series(agg_group_size(data,agg_func=np.min))
-    entropy = pd.Series(shannon_entropy(data))
+    se = pd.Series(shannon_entropy(data))
     tme = pd.Series(theoretical_maximum_entropy(data))
     ptme = pd.Series(percent_theoretical_maximum_entropy(data))
     atf = pd.Series(average_token_frequency(data))
-    
-    metrics_df = pd.concat([mdr,dvr,mean_gs,std_gs,max_gs,min_gs,entropy,ptme,atf],axis=1)
-    metrics_df.columns = ["mdr","dvr","mean_gs","std_gs","max_gs","min_gs","entropy","ptme","atf"]
-    return metrics_df
+
+    out_df = pd.concat([mean_gs, median_gs, std_gs, min_gs, max_gs, mdr, dvr, se, tme, ptme, atf], axis=1)
+    out_df.columns = ["Mean Group Size", "Median Group Size", "Stdev Group Size", "Min Group Size", "Max Group Size",
+                      "Missing Data Ratio", "Distinct Values Ratio", "Shannon Entropy", "Theoretical Max Entropy",
+                      "% Theoretical Max Entropy", "Average Token Frequency"]
+    return out_df
 
 def missing_data_ratio(data, columns=None):
     """Computes the missing data ratio (MDR) for a given dataset.
@@ -112,7 +119,7 @@ def agg_group_size(data, agg_func = np.mean, columns=None):
 
     agg_group_sizes = []
     for col in group_sizes:
-        if group_sizes[col].values() is None:
+        if len(group_sizes[col]) == 0:
             agg_group_sizes.append(-1)
         else:
             agg_group_sizes.append(agg_func([*group_sizes[col].values()]))
@@ -192,7 +199,10 @@ def percent_theoretical_maximum_entropy(data, columns=None):
     # Calculate the P_TME for each column in the column list.
     p_tme = {}
     for k in tme.keys():
-        pct = entropy[k]/tme[k] * 100
+        if tme[k] == 0:
+            pct = np.nan
+        else:
+            pct = entropy[k]/tme[k] * 100
         p_tme[k] = pct
     return p_tme
 
@@ -221,7 +231,7 @@ def average_token_frequency(data, columns=None):
         data_set = set(data[c])
         if "" in data_set:
             data_set.remove("")
-        atfs[c] = data_len/len(data_set)
+        atfs[c] = data_len/len(data_set) if len(data_set) > 0 else np.nan
 
     return atfs
 

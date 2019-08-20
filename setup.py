@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name="ipprl_tools",
-      version="1.0",
+      version="1.0.1",
 	  description="A collection of tools to assist with performing IPPRL Linkage",
 	  author="Andrew Hill",
 	  author_email="andrew.2.hill@ucdenver.edu",
@@ -9,7 +9,4 @@ setup(name="ipprl_tools",
 		"numpy",
 		"scipy",
 		"pandas"],
-	  packages=["ipprl_tools","ipprl_tools.utils"],
-          package_data={"ipprl_tools":["docs/*"]},
-          include_package_data=True
-     )
+	  packages=["ipprl_tools"])
