@@ -156,9 +156,23 @@ def joint_entropy(data, columns=None):
         data {DataFrame} -- DataFrame containing the data in columnar format.
     
     Keyword Arguments:
-        columns {list of tuple} -- List of tuples. Each tuple represents a pair of columns to compute the joint entropy for.
+        columns {list of tuple} -- List of list. Each inner list represents a pair of columns to compute the joint entropy for.
     """
-    pass
+    from collections import Counter
+    from scipy.stats import entropy
+
+    column_list = [data.columns] if columns is None else columns
+	
+	# For each element in the list of tuples, concatenate the columns together
+	concat_vals = [data[col_group].apply(lambda x : "".join(x),axis=1) for col_group in column_list]
+    # Get counts of each value for each column
+    count_vals = [Counter(c.values) for c in concat_vals]
+
+    # Probability for a single value in a discrete distribution is (num_of_occurrences/len_of_distribution)
+    probabilities = np.array([np.array(list(count.values()))/len(count) for count in count_vals])
+    entropies = {col:entropy(p,base=2) for col,p in zip(column_list,probabilities)}
+    return entropies
+
     
 def theoretical_maximum_entropy(data, columns=None):
     """Calculates the Theoretical Maximum Entropy for a given dataset.
