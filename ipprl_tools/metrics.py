@@ -149,7 +149,7 @@ def shannon_entropy(data, columns=None):
     entropies = {col:entropy(p,base=2) for col,p in zip(column_list,probabilities)}
     return entropies
 
-def joint_entropy(data, columns=None):
+def joint_entropy(data, columns=None, missing_is_valid=False):
     """Function to compute the Joint Entropy between two columns.
 
     Arguments:
@@ -164,7 +164,11 @@ def joint_entropy(data, columns=None):
     column_list = [data.columns] if columns is None else columns
     col_list_tpls = [tuple(lst) for lst in column_list]
     # For each element in the list of tuples, concatenate the columns together
-    concat_vals = [data[col_group].apply(lambda x : "".join(x),axis=1) for col_group in column_list]
+    if missing_is_valid:
+        concat_vals = [data[col_group].apply(lambda x : "".join(x),axis=1) for col_group in column_list]
+    else:
+        concat_vals = [data[col_group].apply(lambda x : "" if np.any(x == "") else "".join(x),axis=1) for col_group in column_list]
+
     # Get counts of each value for each column
     count_vals = [Counter(c.values) for c in concat_vals]
 
