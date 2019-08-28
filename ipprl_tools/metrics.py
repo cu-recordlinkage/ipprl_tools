@@ -162,9 +162,9 @@ def joint_entropy(data, columns=None):
     from scipy.stats import entropy
 
     column_list = [data.columns] if columns is None else columns
-	
-	# For each element in the list of tuples, concatenate the columns together
-	concat_vals = [data[col_group].apply(lambda x : "".join(x),axis=1) for col_group in column_list]
+
+    # For each element in the list of tuples, concatenate the columns together
+    concat_vals = [data[col_group].apply(lambda x : "".join(x),axis=1) for col_group in column_list]
     # Get counts of each value for each column
     count_vals = [Counter(c.values) for c in concat_vals]
 
