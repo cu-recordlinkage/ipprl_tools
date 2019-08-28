@@ -162,7 +162,7 @@ def joint_entropy(data, columns=None):
     from scipy.stats import entropy
 
     column_list = [data.columns] if columns is None else columns
-
+    col_list_tpls = [tuple(lst) for lst in column_list]
     # For each element in the list of tuples, concatenate the columns together
     concat_vals = [data[col_group].apply(lambda x : "".join(x),axis=1) for col_group in column_list]
     # Get counts of each value for each column
@@ -170,7 +170,7 @@ def joint_entropy(data, columns=None):
 
     # Probability for a single value in a discrete distribution is (num_of_occurrences/len_of_distribution)
     probabilities = np.array([np.array(list(count.values()))/len(count) for count in count_vals])
-    entropies = {col:entropy(p,base=2) for col,p in zip(column_list,probabilities)}
+    entropies = {col:entropy(p,base=2) for col,p in zip(col_list_tpls,probabilities)}
     return entropies
 
     
