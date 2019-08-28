@@ -122,7 +122,7 @@ def agg_group_size(data, agg_func = np.mean, columns=None):
         if len(group_sizes[col]) == 0:
             agg_group_sizes.append(-1)
         else:
-            agg_group_sizes.append(agg_func([*group_sizes[col].values()]))
+            agg_group_sizes.append(agg_func(list(group_sizes[col].values())))
     #agg_group_sizes = [agg_func([*group_sizes[col].values()]) for col in group_sizes]
 
     return {col:agg_val for col,agg_val in zip(columns_to_use,agg_group_sizes)}
