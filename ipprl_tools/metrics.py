@@ -29,13 +29,22 @@ def run_metrics(data):
     se = pd.Series(shannon_entropy(data))
     tme = pd.Series(theoretical_maximum_entropy(data))
     ptme = pd.Series(percent_theoretical_maximum_entropy(data))
-    atf = pd.Series(average_token_frequency(data))
+    rc = pd.Series(row_count(data))
 
-    out_df = pd.concat([mean_gs, median_gs, std_gs, min_gs, max_gs, mdr, dvr, se, tme, ptme, atf], axis=1)
+    out_df = pd.concat([mean_gs, median_gs, std_gs, min_gs, max_gs, mdr, dvr, se, tme, ptme, rc], axis=1)
     out_df.columns = ["Mean Group Size", "Median Group Size", "Stdev Group Size", "Min Group Size", "Max Group Size",
                       "Missing Data Ratio", "Distinct Values Ratio", "Shannon Entropy", "Theoretical Max Entropy",
-                      "% Theoretical Max Entropy", "Average Token Frequency"]
+                      "% Theoretical Max Entropy", "Row Count"]
     return out_df
+
+def row_count(data, columns=None):
+    """Computes the row count for a given dataset.
+    """
+
+    column_list = data.columns if columns is None else columns
+    # Length of data is constant for all columns, so just compute it once.
+    data_len = len(data)
+    return {c:data_len for c in column_list}
 
 def missing_data_ratio(data, columns=None):
     """Computes the missing data ratio (MDR) for a given dataset.
