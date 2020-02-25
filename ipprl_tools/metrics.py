@@ -37,6 +37,11 @@ def run_metrics(data):
                       "% Theoretical Max Entropy", "Row Count"]
     return out_df
 
+def get_row_count(data):
+    """Runs only row count metric on available data."""
+    data_len = len(data)
+    return pd.DataFrame([data_len],columns=["Row Count"],index=["All Columns"])
+
 def row_count(data, columns=None):
     """Computes the row count for a given dataset.
     """
