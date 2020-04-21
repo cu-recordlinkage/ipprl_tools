@@ -87,7 +87,7 @@ def string_apply(data, indicators, apply_num, apply_freq, func, name, columns=No
         #mod_data = apply_result[:,0]
         #indicators = apply_result[:,1]
         data[c] = apply_result[:,0]
-        idcs = np.squeeze(np.argwhere(apply_result[:,1] != None))
+        idcs = np.squeeze(np.argwhere(apply_result[:,1] != None),axis=-1)
         # result_dict = [{"apply_freq"}]
         _update_indicators(indicators,col_map[c],idcs,name,apply_result[idcs,1])
 
@@ -232,10 +232,9 @@ def _delete_func(value, del_num, del_freq):
     chars_to_delete = min(np.random.choice(del_num)+1,len(value)-1)
 
     # Choose some indices to delete from the string. Choose between 0 and max_chars_to_delete_indices
-    num_to_delete = np.random.choice(chars_to_delete)
-    idcs_to_delete = np.random.choice(len(value),num_to_delete,replace=False)
+    idcs_to_delete = np.random.choice(len(value),chars_to_delete,replace=False)
 
-    result_dict = {"num_deleted":num_to_delete,
+    result_dict = {"num_deleted":chars_to_delete,
                    "idcs_deleted":idcs_to_delete}
 
     # Build a new string without the deleted characters
@@ -314,7 +313,6 @@ def _insert_func_numeric(value, ins_num, ins_freq):
 def _update_indicators(indicator_df, column_index, indices, method_name, metric_result):
 
     tuple_pack = np.stack(np.broadcast_arrays(column_index,indices)).T
-
     # Iterate over the pairs and set their elements
     for ind,pair in enumerate(tuple_pack):
         tuple_pair = tuple(pair)
