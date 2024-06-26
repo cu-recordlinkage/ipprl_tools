@@ -159,7 +159,7 @@ def shannon_entropy(data, columns=None):
     count_vals = [Counter(data[c].values) for c in column_list]
 
     # Probability for a single value in a discrete distribution is (num_of_occurrences/len_of_distribution)
-    probabilities = np.array([np.array(list(count.values()))/len(count) for count in count_vals])
+    probabilities = [np.array(list(count.values()))/len(count) for count in count_vals]
     entropies = {col:entropy(p,base=2) for col,p in zip(column_list,probabilities)}
     return entropies
 
@@ -209,7 +209,7 @@ def theoretical_maximum_entropy(data, columns=None):
 
     unq_vals = [len(set(data[c])) for c in columns_to_use]
 
-    tmes = [-np.log2(1/uq) if uq is not 0 else 0 for uq in unq_vals]
+    tmes = [-np.log2(1/uq) if uq != 0 else 0 for uq in unq_vals]
 
     return {c:tme for c,tme in zip(columns_to_use,tmes)}
 
